@@ -160,6 +160,34 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 }
 [data-testid="stMetricLabel"]  { color: var(--muted)  !important; font-size: 0.85rem !important; }
 [data-testid="stMetricValue"]  { color: var(--text)   !important; font-size: 1.8rem !important; font-weight: 700 !important; }
+
+/* ── Selectbox — фон выпадающего списка ──────────────────── */
+div[data-baseweb="select"] > div {
+    background-color: #FFFFFF !important;
+    border: 1px solid #E5E5E3 !important;
+    color: #1A1A1A !important;
+}
+div[data-baseweb="select"] span {
+    color: #1A1A1A !important;
+}
+div[data-baseweb="popover"] {
+    background-color: #FFFFFF !important;
+}
+li[role="option"] {
+    background-color: #FFFFFF !important;
+    color: #1A1A1A !important;
+}
+li[role="option"]:hover {
+    background-color: #F7F7F5 !important;
+}
+
+/* ── Шапка Streamlit — белый фон вместо тёмного ─────────── */
+header[data-testid="stHeader"] {
+    background-color: #FFFFFF !important;
+    border-bottom: 1px solid #E5E5E3 !important;
+}
+.stDeployButton { display: none; }
+#MainMenu { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -177,13 +205,13 @@ def load_model(path: str):
 def try_load(path: str):
     """Безопасная загрузка с отображением ошибки через st.error()."""
     if not os.path.exists(path):
-        st.error(f"Файл модели не найден: `{path}`  \n"
-                 f"Запустите `python fix_models.py` для генерации моделей.")
+        st.error(f"Model file not found: `{path}`  \n"
+                 f"Run `python fix_models.py` to generate the models.")
         return None
     try:
         return load_model(path)
     except Exception as exc:
-        st.error(f"Ошибка при загрузке `{path}`:  \n`{exc}`")
+        st.error(f"Error loading `{path}`:  \n`{exc}`")
         return None
 
 
@@ -212,8 +240,8 @@ def show_result(probability: float) -> None:
         label      = "Низкий риск"
         icon       = "✓"
         text = (
-            "Прогноз указывает на <b>низкий риск</b> заболевания. "
-            "Рекомендуется поддерживать здоровый образ жизни и проходить регулярные профилактические осмотры."
+            "<b>Низкий риск</b> — значимых показателей не выявлено. "
+            "Поддерживайте здоровый образ жизни и регулярно проходите профилактические осмотры."
         )
     elif pct < 60:
         bar_color  = "#D97706"
@@ -222,8 +250,8 @@ def show_result(probability: float) -> None:
         label      = "Умеренный риск"
         icon       = "!"
         text = (
-            "Прогноз указывает на <b>умеренный риск</b> заболевания. "
-            "Рекомендуется проконсультироваться с врачом и обратить внимание на факторы риска."
+            "<b>Умеренный риск</b> — рекомендуется консультация врача. "
+            "Обратите внимание на образ жизни и известные факторы риска."
         )
     else:
         bar_color  = "#DC2626"
@@ -232,8 +260,8 @@ def show_result(probability: float) -> None:
         label      = "Высокий риск"
         icon       = "⚠"
         text = (
-            "Прогноз указывает на <b>высокий риск</b> заболевания. "
-            "Настоятельно рекомендуется незамедлительно обратиться к врачу для детального обследования."
+            "<b>Высокий риск</b> — необходима срочная консультация врача. "
+            "Незамедлительно обратитесь к квалифицированному специалисту для детального обследования."
         )
 
     # ── Прогресс-бар ──────────────────────────────────────────────
@@ -330,11 +358,11 @@ if page == "Главная":
     st.markdown("""
     <h1 style="font-size:2.2rem; font-weight:800; color:#1A1A1A;
                letter-spacing:-0.04em; margin-bottom:8px;">
-        Intelligent Disease Prediction System
+        Интеллектуальная система прогнозирования заболеваний
     </h1>
     <p style="font-size:1.05rem; color:#6B7280; margin-bottom:36px; max-width:680px;">
         Система машинного обучения для оценки риска инсульта,
-        болезней сердца и сахарного диабета на основе клинических показателей.
+        болезней сердца и сахарного диабета на основе клинических показателей пациента.
     </p>
     """, unsafe_allow_html=True)
 
@@ -352,8 +380,8 @@ if page == "Главная":
             <div style="font-size:1.8rem; margin-bottom:12px;">🧠</div>
             <div style="font-size:1rem; font-weight:600; color:#1A1A1A; margin-bottom:6px;">Инсульт</div>
             <p style="font-size:0.875rem; color:#6B7280; line-height:1.55; margin-bottom:16px;">
-                Оценка риска инсульта по демографическим данным,
-                показателям здоровья и образу жизни пациента.
+                Оценка риска инсульта на основе демографических данных,
+                показателей здоровья и образа жизни пациента.
             </p>
             <span style="display:inline-block; background:#EFF6FF; color:#2563EB;
                          font-size:0.72rem; font-weight:600; padding:3px 10px;
@@ -427,9 +455,9 @@ if page == "Главная":
     <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px;
                 padding:14px 20px; margin-top:28px;
                 font-size:0.875rem; color:#1E40AF; line-height:1.55;">
-        <b>ℹ Важно:</b> This tool is for research purposes only and does not replace
-        professional medical advice. Все прогнозы носят информационный характер.
-        Для постановки диагноза необходимо обратиться к квалифицированному специалисту.
+        <b>ℹ Важно:</b> Данный инструмент предназначен исключительно для исследовательских целей
+        и не заменяет профессиональную медицинскую консультацию. Все прогнозы носят
+        информационный характер. Для постановки диагноза обратитесь к квалифицированному специалисту.
     </div>
     """, unsafe_allow_html=True)
 
@@ -459,17 +487,17 @@ elif page == "Инсульт":
             gender_label = st.selectbox("Пол", ["Мужской", "Женский", "Другой"], key="s_gender")
             gender = {"Мужской": 1, "Женский": 0, "Другой": 2}[gender_label]
 
-            married_label = st.selectbox("Состоит в браке", ["Да", "Нет"], key="s_married")
+            married_label = st.selectbox("Семейное положение", ["Да", "Нет"], key="s_married")
             ever_married = 1 if married_label == "Да" else 0
 
             residence_label = st.selectbox("Тип проживания", ["Городской", "Сельский"], key="s_res")
             residence = 1 if residence_label == "Городской" else 0
 
             work_map = {
-                "Частный сектор":   2,
-                "Самозанятый":      3,
-                "Гос. служба":      0,
-                "Ребёнок":          1,
+                "Частный":           2,
+                "Самозанятый":       3,
+                "Госслужба":         0,
+                "Дети":              1,
                 "Никогда не работал": 4,
             }
             work_label = st.selectbox("Тип занятости", list(work_map.keys()), key="s_work")
@@ -496,7 +524,7 @@ elif page == "Инсульт":
 
             smoking_map = {
                 "Никогда не курил": 1,
-                "Курил ранее":      0,
+                "Бросил":           0,
                 "Курит":            2,
                 "Неизвестно":       3,
             }
@@ -506,7 +534,7 @@ elif page == "Инсульт":
         st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
 
         # ── Кнопка прогноза ───────────────────────────────────────
-        if st.button("Predict Risk — Инсульт", key="stroke_btn"):
+        if st.button("Оценить риск — Инсульт", key="stroke_btn"):
             features = [
                 age, hypertension, heart_disease,
                 avg_glucose, bmi,
@@ -547,10 +575,10 @@ elif page == "Болезни сердца":
             sex = 1 if sex_label == "Мужской" else 0
 
             cp_map = {
-                "Типичная стенокардия":       0,
-                "Атипичная стенокардия":      1,
-                "Нестенокардитическая боль":  2,
-                "Бессимптомная":              3,
+                "Типичная стенокардия":    0,
+                "Атипичная стенокардия":   1,
+                "Неангинальная боль":      2,
+                "Бессимптомная":           3,
             }
             cp_label = st.selectbox("Тип боли в груди (cp)", list(cp_map.keys()), key="h_cp")
             cp = cp_map[cp_label]
@@ -564,7 +592,7 @@ elif page == "Болезни сердца":
             fbs_label = st.selectbox("Сахар натощак > 120 мг/дл", ["Нет", "Да"], key="h_fbs")
             fbs = 1 if fbs_label == "Да" else 0
 
-            restecg_map = {"Норма": 0, "Аномалия ST-T": 1, "Гипертрофия ЛЖ": 2}
+            restecg_map = {"Норма": 0, "Отклонение ST-T": 1, "Гипертрофия ЛЖ": 2}
             restecg_label = st.selectbox("ЭКГ в покое (restecg)", list(restecg_map.keys()), key="h_ecg")
             restecg = restecg_map[restecg_label]
 
@@ -597,7 +625,7 @@ elif page == "Болезни сердца":
         st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
 
         # ── Кнопка прогноза ───────────────────────────────────────
-        if st.button("Predict Risk — Сердце", key="heart_btn"):
+        if st.button("Оценить риск — Болезни сердца", key="heart_btn"):
             features = [age, sex, cp, trestbps, chol, fbs, restecg,
                         thalach, exang, oldpeak, slope, ca, thal]
             with st.spinner("Анализ данных..."):
@@ -646,7 +674,7 @@ elif page == "Диабет":
         with c2:
             section_label("Дополнительные показатели")
             insulin = st.slider(
-                "Инсулин (мкЕд/мл)", min_value=0, max_value=900, value=80, key="d_ins"
+                "Уровень инсулина (мкЕд/мл)", min_value=0, max_value=900, value=80, key="d_ins"
             )
             bmi = st.slider(
                 "Индекс массы тела (ИМТ)", min_value=0.0, max_value=70.0, value=25.0, step=0.1, key="d_bmi"
@@ -662,7 +690,7 @@ elif page == "Диабет":
         st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
 
         # ── Кнопка прогноза ───────────────────────────────────────
-        if st.button("Predict Risk — Диабет", key="diabetes_btn"):
+        if st.button("Оценить риск — Диабет", key="diabetes_btn"):
             features = [pregnancies, glucose, blood_pressure,
                         skin_thickness, insulin, bmi, dpf, age]
             with st.spinner("Анализ данных..."):
