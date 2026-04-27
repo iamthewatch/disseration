@@ -1,13 +1,13 @@
-# ============================================================
-# evaluate.py — Оценка качества обученных моделей
-# Метрики: Accuracy, Precision, Recall, F1, ROC-AUC
-# Дополнительно: ROC-кривые и сводная таблица сравнения
-# ============================================================
+# evaluate.py — Model evaluation for Heart Disease prediction
+# Metrics: Accuracy, Precision, Recall, F1, ROC-AUC
+# Output: ROC curves + comparison table
 
 import os
 import sys
 import joblib
 import numpy as np
+import matplotlib
+matplotlib.rcParams['font.family'] = 'DejaVu Sans'
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -20,16 +20,13 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-# Добавляем корень проекта в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from heart.preprocessing import preprocess
 
 MODELS_DIR = "heart/models"
-PLOTS_DIR = "heart/plots"
+PLOTS_DIR  = "heart/plots"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
-# Имена моделей и соответствующие имена файлов pkl
 MODEL_FILES = {
     "Logistic Regression": "logistic_regression.pkl",
     "Decision Tree":       "decision_tree.pkl",
@@ -38,39 +35,31 @@ MODEL_FILES = {
     "XGBoost":             "xgboost.pkl",
 }
 
-# -------------------------------------------------------
-# 1. Предобработка данных (получаем тестовую выборку)
-# -------------------------------------------------------
+# ── 1. Preprocess data ────────────────────────────────────────────────────────
 print("=" * 60)
-print("ЭТАП 1: Предобработка данных")
+print("STEP 1: Data Preprocessing")
 print("=" * 60)
 X_train, X_test, y_train, y_test = preprocess(verbose=False)
 
-# -------------------------------------------------------
-# 2. Загрузка моделей и вычисление метрик
-# -------------------------------------------------------
+# ── 2. Load models and compute metrics ───────────────────────────────────────
 print("\n" + "=" * 60)
-print("ЭТАП 2: Оценка моделей на тестовой выборке")
+print("STEP 2: Model Evaluation on Test Set")
 print("=" * 60)
 
-results = {}  # имя модели -> dict с метриками
+results = {}
 
 for name, filename in MODEL_FILES.items():
     model_path = os.path.join(MODELS_DIR, filename)
 
     if not os.path.exists(model_path):
-        print(f"\n  [ПРЕДУПРЕЖДЕНИЕ] Файл модели не найден: {model_path}")
-        print(f"  Запустите train.py перед evaluate.py")
+        print(f"\n  [WARNING] Model file not found: {model_path}")
+        print(f"  Run train.py before evaluate.py")
         continue
 
-    # Загружаем обученную модель
-    model = joblib.load(model_path)
-
-    # Предсказания классов и вероятностей
+    model  = joblib.load(model_path)
     y_pred = model.predict(X_test)
-    y_prob = model.predict_proba(X_test)[:, 1]  # вероятность класса 1
+    y_prob = model.predict_proba(X_test)[:, 1]
 
-    # Вычисляем метрики
     acc  = accuracy_score(y_test, y_pred)
     prec = precision_score(y_test, y_pred, zero_division=0)
     rec  = recall_score(y_test, y_pred, zero_division=0)
@@ -83,12 +72,11 @@ for name, filename in MODEL_FILES.items():
         "Recall":    rec,
         "F1-score":  f1,
         "ROC-AUC":   auc,
-        "y_prob":    y_prob,   # нужно для ROC-кривой
+        "y_prob":    y_prob,
     }
 
-    # Выводим метрики для каждой модели
     print(f"\n  {'='*40}")
-    print(f"  Модель: {name}")
+    print(f"  Model: {name}")
     print(f"  {'='*40}")
     print(f"    Accuracy:  {acc:.4f}")
     print(f"    Precision: {prec:.4f}")
@@ -96,14 +84,11 @@ for name, filename in MODEL_FILES.items():
     print(f"    F1-score:  {f1:.4f}")
     print(f"    ROC-AUC:   {auc:.4f}")
 
-# -------------------------------------------------------
-# 3. ROC-кривые для всех моделей на одном графике
-# -------------------------------------------------------
+# ── 3. ROC curves ─────────────────────────────────────────────────────────────
 print("\n" + "=" * 60)
-print("ЭТАП 3: Построение ROC-кривых")
+print("STEP 3: ROC Curves")
 print("=" * 60)
 
-# Цвета для каждой модели
 colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
 
 fig, ax = plt.subplots(figsize=(9, 7))
@@ -113,12 +98,11 @@ for (name, metrics), color in zip(results.items(), colors):
     auc_val = metrics["ROC-AUC"]
     ax.plot(fpr, tpr, label=f"{name} (AUC = {auc_val:.3f})", color=color, linewidth=2)
 
-# Диагональная линия случайного классификатора
-ax.plot([0, 1], [0, 1], "k--", linewidth=1, label="Случайный классификатор")
+ax.plot([0, 1], [0, 1], "k--", linewidth=1, label="Random Classifier")
 
-ax.set_title("ROC-кривые моделей предсказания болезней сердца", fontsize=13)
+ax.set_title("ROC Curves — Heart Disease Models", fontsize=13)
 ax.set_xlabel("False Positive Rate (1 - Specificity)", fontsize=11)
-ax.set_ylabel("True Positive Rate (Sensitivity / Recall)", fontsize=11)
+ax.set_ylabel("True Positive Rate (Sensitivity)", fontsize=11)
 ax.legend(loc="lower right", fontsize=9)
 ax.grid(alpha=0.3)
 plt.tight_layout()
@@ -126,39 +110,34 @@ plt.tight_layout()
 roc_path = os.path.join(PLOTS_DIR, "roc_curves.png")
 plt.savefig(roc_path, dpi=150)
 plt.close()
-print(f"  [OK] ROC-кривые сохранены: {roc_path}")
+print(f"  [OK] ROC curves saved: {roc_path}")
 
-# -------------------------------------------------------
-# 4. Итоговая сводная таблица сравнения моделей
-# -------------------------------------------------------
+# ── 4. Summary comparison table ───────────────────────────────────────────────
 print("\n" + "=" * 60)
-print("ЭТАП 4: Сводная таблица сравнения моделей")
+print("STEP 4: Model Comparison Table")
 print("=" * 60)
 
-# Формируем DataFrame без столбца y_prob
 summary_data = {
     name: {k: v for k, v in metrics.items() if k != "y_prob"}
     for name, metrics in results.items()
 }
 summary_df = pd.DataFrame(summary_data).T.round(4)
-summary_df.index.name = "Модель"
+summary_df.index.name = "Model"
 
 print(f"\n{summary_df.to_string()}")
 
-# -------------------------------------------------------
-# 5. Лучшая модель по F1-score и ROC-AUC
-# -------------------------------------------------------
+# ── 5. Best models ────────────────────────────────────────────────────────────
 print("\n" + "=" * 60)
-print("ЭТАП 5: Лучшие модели")
+print("STEP 5: Best Models")
 print("=" * 60)
 
 best_f1_name  = max(results, key=lambda n: results[n]["F1-score"])
 best_auc_name = max(results, key=lambda n: results[n]["ROC-AUC"])
 
-print(f"\n  Лучшая модель по F1-score:  {best_f1_name}")
+print(f"\n  Best by F1-score:  {best_f1_name}")
 print(f"    F1-score = {results[best_f1_name]['F1-score']:.4f}")
 
-print(f"\n  Лучшая модель по ROC-AUC:   {best_auc_name}")
+print(f"\n  Best by ROC-AUC:   {best_auc_name}")
 print(f"    ROC-AUC  = {results[best_auc_name]['ROC-AUC']:.4f}")
 
-print("\n[Оценка завершена]")
+print("\n[Evaluation complete]")
